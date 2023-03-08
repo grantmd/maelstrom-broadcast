@@ -9,6 +9,12 @@ struct Node {
     messages: Vec<u128>,
 }
 
+impl Node {
+    pub fn new() -> Node {
+        Default::default()
+    }
+}
+
 #[derive(Default, Serialize, Deserialize, Debug)]
 struct MessageBody {
     #[serde(rename(serialize = "type", deserialize = "type"))]
@@ -42,7 +48,7 @@ struct Message {
 
 #[tokio::main]
 async fn  main() -> io::Result<()> {
-    let mut node: Node = Default::default();
+    let mut node: Node = Node::new();
 
     loop {
         let mut buffer = String::new();
