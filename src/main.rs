@@ -1,5 +1,6 @@
 use std::io;
 use serde::{Deserialize, Serialize};
+use serde_json::Result;
 
 #[derive(Default, Debug)]
 struct Node {
@@ -12,6 +13,28 @@ struct Node {
 impl Node {
     pub fn new() -> Node {
         Default::default()
+    }
+
+    fn reply(&mut self, request: Message, mut reply: MessageBody) -> Result<()> {
+        reply.in_reply_to = request.body.msg_id;
+        self.send(request.src, reply)
+    }
+
+    fn send(&mut self, dest: String, mut reply: MessageBody) -> Result<()> {
+        self.msg_id += 1;
+        reply.msg_id = self.msg_id;
+
+        let out = Message {
+            src: self.id.clone(),
+            dest: dest,
+            body: reply,
+        };
+
+        let out_str = serde_json::to_string(&out)?;
+        eprintln!("Sending: {}", out_str);
+        println!("{}", out_str);
+
+        Ok(())
     }
 }
 
@@ -56,14 +79,14 @@ async fn  main() -> io::Result<()> {
         eprint!("Received: {}", buffer);
 
         let msg: Message = serde_json::from_str(&buffer)?;
-        let body = msg.body;
+        let ref body = msg.body;
 
         let mut reply: MessageBody = Default::default();
 
         match body.msg_type.as_str() {
             "init" => {
-                node.id = body.node_id;
-                node.node_ids = body.node_ids;
+                node.id = body.node_id.to_owned();
+                node.node_ids = body.node_ids.to_owned();
                 reply.msg_type = "init_ok".to_string();
             },
             "broadcast" => {
@@ -83,19 +106,7 @@ async fn  main() -> io::Result<()> {
             }
         }
 
-        node.msg_id += 1;
-        reply.msg_id = node.msg_id;
-
-        reply.in_reply_to = body.msg_id;
-        let out = Message {
-            src: node.id.clone(),
-            dest: msg.src,
-            body: reply,
-        };
-
-        let out_str = serde_json::to_string(&out)?;
-        eprintln!("Sending: {}", out_str);
-        println!("{}", out_str);
+        node.reply(msg, reply)?;
     }
 }
 
