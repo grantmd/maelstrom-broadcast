@@ -1,4 +1,6 @@
 use std::io;
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
@@ -7,6 +9,7 @@ struct Node {
     id: String,
     msg_id: u128,
     node_ids: Vec<String>,
+    neighbors: Vec<String>,
     messages: Vec<u128>,
 }
 
@@ -65,6 +68,9 @@ struct MessageBody {
     #[serde(default, skip_serializing)]
     node_ids: Vec<String>,
 
+    #[serde(default, skip_serializing)]
+    topology: HashMap<String, Vec<String>>,
+
     #[serde(default)]
     #[serde(skip_serializing_if = "is_zero")]
     message: u128,
@@ -114,8 +120,8 @@ async fn  main() -> io::Result<()> {
             },
             "topology" => {
                 reply.msg_type = "topology_ok".to_string();
-
-                // TODO: Handle the topology we are sent
+                node.neighbors = body.topology[&node.id].clone();
+                eprintln!("Neighbors set to: {:?}", node.neighbors);
             },
             _ => {
                 eprintln!("Unknown message type: {}", body.msg_type);
