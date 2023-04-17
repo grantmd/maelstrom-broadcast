@@ -40,14 +40,14 @@ impl Node {
         Ok(())
     }
 
-    fn broadcast(&mut self, reply: MessageBody) -> Result<()> {
+    fn broadcast(&mut self, msg: Message) -> Result<()> {
         let nodes = self.node_ids.clone();
         for n in nodes {
-            if n == self.id {
+            if n == self.id || n == msg.src {
                 continue;
             }
 
-            self.send(n.to_string(), reply.clone())?;
+            self.send(n.to_string(), msg.body.clone())?;
         }
         Ok(())
     }
@@ -80,7 +80,7 @@ struct MessageBody {
     messages: Option<Vec<u128>>,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 struct Message {
     src: String,
     dest: String,
@@ -111,7 +111,7 @@ async fn  main() -> io::Result<()> {
                 // Store the message, and if we haven't seen it before, broadcast it out
                 if node.messages.insert(body.message) {
                     // TODO: Ideally we batch these up and do them every couple seconds
-                    node.broadcast(body.clone())?;
+                    node.broadcast(msg.clone())?;
                 }
 
                 reply.msg_type = "broadcast_ok".to_string();
