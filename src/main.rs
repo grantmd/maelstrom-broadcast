@@ -40,6 +40,10 @@ impl Node {
     fn broadcast(&mut self, reply: MessageBody) -> Result<()> {
         let nodes = self.node_ids.clone();
         for n in nodes {
+            if n == self.id {
+                continue;
+            }
+
             self.send(n.to_string(), reply.clone())?;
         }
         Ok(())
@@ -110,6 +114,8 @@ async fn  main() -> io::Result<()> {
             },
             "topology" => {
                 reply.msg_type = "topology_ok".to_string();
+
+                // TODO: Handle the topology we are sent
             },
             _ => {
                 eprintln!("Unknown message type: {}", body.msg_type);
