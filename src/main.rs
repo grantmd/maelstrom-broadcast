@@ -70,8 +70,8 @@ struct MessageBody {
     message: u128,
 
     #[serde(default)]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    messages: Vec<u128>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    messages: Option<Vec<u128>>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug)]
@@ -109,7 +109,7 @@ async fn  main() -> io::Result<()> {
                 node.broadcast(body.clone())?;
             },
             "read" => {
-                reply.messages = node.messages.clone();
+                reply.messages = Some(node.messages.clone());
                 reply.msg_type = "read_ok".to_string();
             },
             "topology" => {
