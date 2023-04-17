@@ -41,8 +41,9 @@ impl Node {
     }
 
     fn broadcast(&mut self, msg: Message) -> Result<()> {
-        let nodes = self.node_ids.clone();
+        let nodes = self.neighbors.clone();
         for n in nodes {
+            // Never send to ourselves or the node that just sent the message to us
             if n == self.id || n == msg.src {
                 continue;
             }
