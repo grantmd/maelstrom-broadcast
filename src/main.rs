@@ -1,5 +1,5 @@
 use std::io;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
@@ -10,7 +10,7 @@ struct Node {
     msg_id: u128,
     node_ids: Vec<String>,
     neighbors: Vec<String>,
-    messages: Vec<u128>,
+    messages: HashSet<u128>,
 }
 
 impl Node {
@@ -108,14 +108,14 @@ async fn  main() -> io::Result<()> {
                 reply.msg_type = "init_ok".to_string();
             },
             "broadcast" => {
-                node.messages.push(body.message);
+                node.messages.insert(body.message);
                 reply.msg_type = "broadcast_ok".to_string();
 
                 // TODO: Ideally we batch these up and do them every couple seconds
                 node.broadcast(body.clone())?;
             },
             "read" => {
-                reply.messages = Some(node.messages.clone());
+                reply.messages = Some(node.messages.clone().into_iter().collect());
                 reply.msg_type = "read_ok".to_string();
             },
             "topology" => {
