@@ -36,9 +36,17 @@ impl Node {
 
         Ok(())
     }
+
+    fn broadcast(&mut self, reply: MessageBody) -> Result<()> {
+        let nodes = self.node_ids.clone();
+        for n in nodes {
+            self.send(n.to_string(), reply.clone())?;
+        }
+        Ok(())
+    }
 }
 
-#[derive(Default, Serialize, Deserialize, Debug)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 struct MessageBody {
     #[serde(rename(serialize = "type", deserialize = "type"))]
     msg_type: String,
@@ -59,7 +67,7 @@ struct MessageBody {
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    messages:Vec<u128>,
+    messages: Vec<u128>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug)]
@@ -92,6 +100,9 @@ async fn  main() -> io::Result<()> {
             "broadcast" => {
                 node.messages.push(body.message);
                 reply.msg_type = "broadcast_ok".to_string();
+
+                // TODO: Ideally we batch these up and do them every couple seconds
+                node.broadcast(body.clone())?;
             },
             "read" => {
                 reply.messages = node.messages.clone();
