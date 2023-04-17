@@ -108,11 +108,13 @@ async fn  main() -> io::Result<()> {
                 reply.msg_type = "init_ok".to_string();
             },
             "broadcast" => {
-                node.messages.insert(body.message);
-                reply.msg_type = "broadcast_ok".to_string();
+                // Store the message, and if we haven't seen it before, broadcast it out
+                if node.messages.insert(body.message) {
+                    // TODO: Ideally we batch these up and do them every couple seconds
+                    node.broadcast(body.clone())?;
+                }
 
-                // TODO: Ideally we batch these up and do them every couple seconds
-                node.broadcast(body.clone())?;
+                reply.msg_type = "broadcast_ok".to_string();
             },
             "read" => {
                 reply.messages = Some(node.messages.clone().into_iter().collect());
@@ -132,7 +134,10 @@ async fn  main() -> io::Result<()> {
             }
         }
 
-        node.reply(msg, reply)?;
+        // Inter-server messages don't have a msg_id, and don't need a response
+        if body.msg_id > 0 {
+            node.reply(msg, reply)?;
+        }
     }
 }
 
