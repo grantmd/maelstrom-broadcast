@@ -123,6 +123,9 @@ async fn  main() -> io::Result<()> {
                 node.neighbors = body.topology[&node.id].clone();
                 eprintln!("Neighbors set to: {:?}", node.neighbors);
             },
+            "broadcast_ok" => {
+                continue;
+            }
             _ => {
                 eprintln!("Unknown message type: {}", body.msg_type);
                 continue;
