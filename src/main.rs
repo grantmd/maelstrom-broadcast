@@ -115,8 +115,10 @@ async fn  main() -> io::Result<()> {
         // Look at the message type and decide what to do
         match body.msg_type.as_str() {
             "init" => {
+                // Store our designated node ID as well as all the other nodes in the network
                 node.id = body.node_id.to_owned();
                 node.node_ids = body.node_ids.to_owned();
+
                 reply.msg_type = "init_ok".to_string();
             },
             "broadcast" => {
@@ -129,15 +131,20 @@ async fn  main() -> io::Result<()> {
                 reply.msg_type = "broadcast_ok".to_string();
             },
             "read" => {
+                // Attach all the messages we've seen
                 reply.messages = Some(node.messages.clone().into_iter().collect());
+
                 reply.msg_type = "read_ok".to_string();
             },
             "topology" => {
-                reply.msg_type = "topology_ok".to_string();
+                // Grab our set of neighbors and store it for later
                 node.neighbors = body.topology[&node.id].clone();
                 eprintln!("Neighbors set to: {:?}", node.neighbors);
+
+                reply.msg_type = "topology_ok".to_string();
             },
             "broadcast_ok" => {
+                // Just eat it
                 continue;
             }
             _ => {
