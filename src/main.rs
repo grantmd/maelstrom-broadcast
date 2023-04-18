@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
+// A node holds various state about who we are and what we've seen
 #[derive(Default, Debug)]
 struct Node {
     id: String,
@@ -14,25 +15,30 @@ struct Node {
 }
 
 impl Node {
+    // Shortcut for defining a new node
     pub fn new() -> Node {
         Default::default()
     }
 
+    // Convenience function for responding to a message with a reply
     fn reply(&mut self, request: Message, mut reply: MessageBody) -> Result<()> {
         reply.in_reply_to = request.body.msg_id;
         self.send(request.src, reply)
     }
 
-    fn send(&mut self, dest: String, mut reply: MessageBody) -> Result<()> {
+    // Sends a new message to a specific destination
+    fn send(&mut self, dest: String, mut body: MessageBody) -> Result<()> {
+        // Iterate our current message id and attach it to the message
         self.msg_id += 1;
-        reply.msg_id = self.msg_id;
+        body.msg_id = self.msg_id;
 
         let out = Message {
             src: self.id.clone(),
             dest: dest,
-            body: reply,
+            body: body,
         };
 
+        // Serialize to json and flush to STDOUT
         let out_str = serde_json::to_string(&out)?;
         eprintln!("Sending: {}", out_str);
         println!("{}", out_str);
@@ -40,6 +46,7 @@ impl Node {
         Ok(())
     }
 
+    // Takes a message and sends it to all nodes we are neighbors to
     fn broadcast(&mut self, msg: Message) -> Result<()> {
         let nodes = self.neighbors.clone();
         for n in nodes {
@@ -92,16 +99,20 @@ struct Message {
 async fn  main() -> io::Result<()> {
     let mut node: Node = Node::new();
 
+    // Loop over input until we are killed
     loop {
+        // Read a line from STDIN
         let mut buffer = String::new();
         io::stdin().read_line(&mut buffer)?;
         eprint!("Received: {}", buffer);
 
+        // Decode into jso
         let msg: Message = serde_json::from_str(&buffer)?;
         let ref body = msg.body;
 
         let mut reply: MessageBody = Default::default();
 
+        // Look at the message type and decide what to do
         match body.msg_type.as_str() {
             "init" => {
                 node.id = body.node_id.to_owned();
