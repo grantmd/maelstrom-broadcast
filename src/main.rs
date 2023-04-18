@@ -34,8 +34,8 @@ impl Node {
 
         let out = Message {
             src: self.id.clone(),
-            dest: dest,
-            body: body,
+            dest,
+            body,
         };
 
         // Serialize to json and flush to STDOUT
@@ -108,7 +108,7 @@ async fn  main() -> io::Result<()> {
 
         // Decode into jso
         let msg: Message = serde_json::from_str(&buffer)?;
-        let ref body = msg.body;
+        let body = &msg.body;
 
         let mut reply: MessageBody = Default::default();
 
